@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es-AR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Cotizador Web · Estimador de presupuestos para sitios y apps</title>
+  <meta name="description" content="Herramienta interna para estimar rangos de presupuesto, etapas, tiempos y riesgos de proyectos web. Por Thiago Da Graca.">
+  <meta name="author" content="Thiago Da Graca">
+  <meta name="theme-color" content="#0a0e14">
+
+  <!-- Favicon inline (no depende de archivos externos) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffb454'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='28' font-weight='700' text-anchor='middle' fill='%231b1204'%3ECW%3C/text%3E%3C/svg%3E">
+
+  <!-- Tema inicial ANTES del primer render (evita el "flash" de tema incorrecto) -->
+  <script>
+    (function () {
+      var theme;
+      try { theme = localStorage.getItem('cotizador-theme'); } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <!--
+    Tipografías del portfolio (Bricolage Grotesque · DM Sans · JetBrains Mono).
+    Son opcionales: si no cargan (sin internet) el CSS usa fuentes del sistema.
+    Para ser 100% offline, borrá estas 3 líneas.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body id="top">
+  <!--
+    Sprite de iconos (estilo trazo). Se usan con: <svg class="icon"><use href="#i-nombre"/></svg>
+    Para agregar uno nuevo, sumá un <symbol id="i-nombre"> acá.
+  -->
+  <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></symbol>
+    <symbol id="i-linkedin" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <!-- =====================================================================
+       HEADER: marca · selector de moneda · tema · contacto
+       ===================================================================== -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="#top" aria-label="Cotizador Web, ir al inicio">
+        <span class="brand__mark">CW</span>
+        <span class="brand__text">Cotizador Web
+          <small class="brand__sub mono">por Thiago Da Graca</small>
+        </span>
+      </a>
+
+      <div class="site-header__actions">
+        <!-- Moneda de visualización: los precios se calculan en USD y se convierten -->
+        <div class="segmented" role="group" aria-label="Moneda de visualización">
+          <button type="button" class="segmented__btn" data-currency="ARS">ARS</button>
+          <button type="button" class="segmented__btn" data-currency="USD">USD</button>
+        </div>
+
+        <button type="button" class="btn btn--icon" id="themeToggle" aria-label="Cambiar entre tema claro y oscuro">
+          <svg class="icon icon--sun" aria-hidden="true"><use href="#i-sun"/></svg>
+          <svg class="icon icon--moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        </button>
+
+        <a class="btn btn--primary btn--sm site-header__cta" href="#contacto">
+          Contactar
+          <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="container">
+
+    <!-- =====================================================================
+         BARRA DE TÍTULO + EJEMPLOS PRECARGADOS
+         ===================================================================== -->
+    <section class="toolbar" aria-labelledby="titulo">
+      <div class="toolbar__title">
+        <span class="status-pill"><span class="status-pill__dot"></span>Valores ficticios · editables en app.js</span>
+        <h1 id="titulo">Cotizador de páginas web</h1>
+        <p>Respondé las preguntas y mirá en vivo el rango de presupuesto, las etapas con sus tiempos y los factores que encarecen el proyecto. Es una estimación para aprender y alinear al equipo, no un precio final.</p>
+      </div>
+
+      <div class="toolbar__presets">
+        <span class="toolbar__label mono">Cargar un ejemplo</span>
+        <div class="chips" id="presets"></div>
+      </div>
+    </section>
+
+    <noscript>
+      <p class="note">Este cotizador necesita JavaScript para calcular las estimaciones.</p>
+    </noscript>
+
+    <!-- =====================================================================
+         APP: formulario (izquierda) + resultados (derecha)
+         ===================================================================== -->
+    <div class="app">
+
+      <!-- ---------------------------- FORMULARIO ---------------------------- -->
+      <form class="panel" id="form" autocomplete="off" novalidate>
+
+        <!-- 1 · PROYECTO -->
+        <fieldset class="group">
+          <legend class="sr-only">Datos del proyecto</legend>
+          <div class="group__head">
+            <span class="group__num">01</span>
+            <h2 class="group__title">Proyecto</h2>
+          </div>
+
+          <div class="field">
+            <label class="label" for="type">¿Qué tipo de sitio es? <span class="badge badge--teal">Pregunta extra</span></label>
+            <select class="field__input" id="type"></select>
+            <p class="field__hint" id="typeHint"></p>
+            <p class="field__why">Por qué la sumamos: define la complejidad base. Una landing y un e-commerce no se parecen en nada.</p>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="pages">¿Cuántas páginas requiere?</label>
+              <div class="stepper" data-stepper="pages">
+                <button type="button" class="stepper__btn" data-step="-1" aria-label="Una página menos">−</button>
+                <input class="field__input stepper__input" id="pages" type="number" inputmode="numeric">
+                <button type="button" class="stepper__btn" data-step="1" aria-label="Una página más">+</button>
+              </div>
+              <p class="field__why">Cada página suma diseño, maquetado, contenido y pruebas.</p>
+            </div>
+
+            <div class="field">
+              <label class="label" for="desiredWeeks">¿Cuánto tiempo necesita? (semanas)</label>
+              <div class="stepper" data-stepper="desiredWeeks">
+                <button type="button" class="stepper__btn" data-step="-1" aria-label="Una semana menos">−</button>
+                <input class="field__input stepper__input" id="desiredWeeks" type="number" inputmode="numeric" placeholder="Flexible">
+                <button type="button" class="stepper__btn" data-step="1" aria-label="Una semana más">+</button>
+              </div>
+              <p class="field__hint" id="weeksHint"></p>
+              <p class="field__why">Vacío = sin apuro. Si el plazo es menor al estimado, se aplica recargo por urgencia.</p>
+            </div>
+          </div>
+
+          <div class="field" style="max-width:340px">
+            <label class="label" for="mvps">¿Cuántos MVP va a tener?</label>
+            <div class="stepper" data-stepper="mvps">
+              <button type="button" class="stepper__btn" data-step="-1" aria-label="Un MVP menos">−</button>
+              <input class="field__input stepper__input" id="mvps" type="number" inputmode="numeric">
+              <button type="button" class="stepper__btn" data-step="1" aria-label="Un MVP más">+</button>
+            </div>
+            <p class="field__why">El primer MVP está incluido; cada uno extra suma un ciclo de feedback, ajustes y despliegue.</p>
+          </div>
+        </fieldset>
+
+        <!-- 2 · TECNOLOGÍA -->
+        <fieldset class="group">
+          <legend class="sr-only">Tecnología</legend>
+          <div class="group__head">
+            <span class="group__num">02</span>
+            <h2 class="group__title">Tecnología</h2>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="tools">¿Cuántas herramientas de tecnología usará?</label>
+              <div class="stepper" data-stepper="tools">
+                <button type="button" class="stepper__btn" data-step="-1" aria-label="Una herramienta menos">−</button>
+                <input class="field__input stepper__input" id="tools" type="number" inputmode="numeric">
+                <button type="button" class="stepper__btn" data-step="1" aria-label="Una herramienta más">+</button>
+              </div>
+              <p class="field__why">Frameworks, librerías de UI, base de datos, hosting, APIs, CI/CD… cada una se aprende, configura e integra.</p>
+            </div>
+
+            <div class="field">
+              <label class="label" for="backend">Backend y datos adicionales <span class="badge badge--teal">Pregunta extra</span></label>
+              <select class="field__input" id="backend"></select>
+              <p class="field__hint" id="backendHint"></p>
+              <p class="field__why">Es de los factores que más sube el costo y el hosting mensual.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label" id="featuresLabel">Funcionalidades extra <span class="badge badge--teal">Pregunta extra</span></span>
+            <div class="checks" id="features" role="group" aria-labelledby="featuresLabel"></div>
+            <p class="field__why">Login, pagos o panel admin suelen duplicar el trabajo de backend y de pruebas.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="ai">¿Qué costo aproximado de IA usará?</label>
+            <select class="field__input" id="ai"></select>
+            <p class="field__hint" id="aiHint"></p>
+            <p class="field__why">Suma horas de integración y un gasto mensual variable de API (no es pago único).</p>
+          </div>
+        </fieldset>
+
+        <!-- 3 · DISEÑO Y CONTENIDO -->
+        <fieldset class="group">
+          <legend class="sr-only">Diseño y contenido</legend>
+          <div class="group__head">
+            <span class="group__num">03</span>
+            <h2 class="group__title">Diseño y contenido</h2>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="design">¿Quién resuelve el diseño? <span class="badge badge--teal">Pregunta extra</span></label>
+              <select class="field__input" id="design"></select>
+              <p class="field__why">Diseñar a medida lleva varias veces más horas que adaptar una plantilla.</p>
+            </div>
+
+            <div class="field">
+              <label class="label" for="content">¿Quién aporta textos e imágenes? <span class="badge badge--teal">Pregunta extra</span></label>
+              <select class="field__input" id="content"></select>
+              <p class="field__why">Escribir el contenido suma horas, y esperarlo del cliente suma riesgo de demoras.</p>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 4 · DESPUÉS DEL LANZAMIENTO -->
+        <fieldset class="group">
+          <legend class="sr-only">Después del lanzamiento</legend>
+          <div class="group__head">
+            <span class="group__num">04</span>
+            <h2 class="group__title">Después del lanzamiento</h2>
+          </div>
+
+          <div class="field">
+            <label class="label" for="maintenance">¿Cuál va a ser su mantenimiento?</label>
+            <select class="field__input" id="maintenance"></select>
+            <p class="field__hint" id="maintHint"></p>
+            <p class="field__why">Es un costo mensual recurrente y se suma al hosting y dominio calculados según el backend.</p>
+          </div>
+        </fieldset>
+
+        <!-- 5 · COTIZACIÓN -->
+        <fieldset class="group">
+          <legend class="sr-only">Cotización del dólar</legend>
+          <div class="group__head">
+            <span class="group__num">05</span>
+            <h2 class="group__title">Cotización</h2>
+          </div>
+
+          <div class="field" style="max-width:340px">
+            <label class="label" for="usdToArs">Dólar de referencia (1 USD = ARS)</label>
+            <input class="field__input" id="usdToArs" type="number" inputmode="decimal" min="1" step="any">
+            <p class="field__why">Los precios se calculan en USD y se convierten con este valor. Cambialo y todo se actualiza solo.</p>
+          </div>
+
+          <div class="actions-row">
+            <button type="button" class="btn btn--secondary btn--sm" data-action="reset">
+              <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
+              Reiniciar formulario
+            </button>
+          </div>
+        </fieldset>
+      </form>
+
+      <!-- ---------------------------- RESULTADOS ---------------------------- -->
+      <aside class="results" id="resultados" aria-label="Resultados de la estimación">
+
+        <div class="results__head">
+          <div>
+            <p class="eyebrow">Estimación en vivo</p>
+            <h2 class="results__title">Rango de presupuesto</h2>
+          </div>
+          <div class="results__actions">
+            <button type="button" class="btn btn--primary btn--sm" data-action="copy">
+              <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>
+              <span data-role="label">Copiar resumen</span>
+            </button>
+            <button type="button" class="btn btn--secondary btn--sm" data-action="reset">
+              <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
+              Reiniciar
+            </button>
+          </div>
+        </div>
+
+        <p class="note">Rango estimado de <strong>pago único</strong> (desarrollo). No es un precio final: depende de requisitos reales, cambios de alcance y negociación.</p>
+
+        <!-- Tarjetas Mínimo / Recomendado / Premium (las arma app.js) -->
+        <div class="price-grid" id="priceCards"></div>
+
+        <!-- Costos recurrentes -->
+        <section class="block" aria-labelledby="h-recurrente">
+          <div class="block__head">
+            <h3 class="block__title" id="h-recurrente">Costos recurrentes</h3>
+            <span class="block__sub mono">mantenimiento + hosting + IA + herramientas</span>
+          </div>
+          <div class="table" id="recurring"></div>
+        </section>
+
+        <!-- Desglose por etapas -->
+        <section class="block" aria-labelledby="h-etapas">
+          <div class="block__head">
+            <h3 class="block__title" id="h-etapas">Desglose por etapas</h3>
+            <div class="segmented" id="stageTabs" role="group" aria-label="Escenario del desglose"></div>
+          </div>
+          <div class="stages" id="stages"></div>
+          <div class="stages__foot" id="stagesFoot"></div>
+        </section>
+
+        <!-- Complejidad y alertas -->
+        <section class="block" aria-labelledby="h-alertas">
+          <div class="block__head">
+            <h3 class="block__title" id="h-alertas">Alertas de complejidad</h3>
+            <span class="badge" id="complexityBadge"></span>
+          </div>
+          <div>
+            <div class="gauge" id="gauge"><span class="gauge__marker"></span></div>
+            <div class="gauge__scale"><span>Baja</span><span>Media</span><span>Alta</span><span>Muy alta</span></div>
+          </div>
+          <div class="alerts" id="alerts"></div>
+        </section>
+
+        <!-- Top 3 de factores que encarecen -->
+        <section class="block" aria-labelledby="h-factores">
+          <div class="block__head">
+            <h3 class="block__title" id="h-factores">Lo que más encarece el proyecto</h3>
+            <span class="block__sub mono">top 3 · escenario recomendado</span>
+          </div>
+          <div class="factors" id="factors"></div>
+        </section>
+
+        <!-- Contacto -->
+        <section class="cta" id="contacto" aria-labelledby="h-contacto">
+          <div>
+            <p class="eyebrow">¿Hablamos?</p>
+            <h3 class="cta__title" id="h-contacto">¿Querés convertir esta estimación en un proyecto real?</h3>
+          </div>
+          <p id="ctaText"></p>
+          <div class="cta__links" id="contactLinks"></div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- =====================================================================
+         REFERENCIA DE MERCADO: presupuesto medio por tipo de sitio
+         ===================================================================== -->
+    <section class="block benchmark" id="referencia" aria-labelledby="h-ref">
+      <div class="block__head">
+        <div>
+          <p class="eyebrow">Referencia rápida</p>
+          <h2 class="block__title" id="h-ref" style="margin-top:.4rem;font-size:var(--fs-xl)">Presupuesto medio por tipo de sitio</h2>
+        </div>
+        <span class="block__sub mono" id="benchNote"></span>
+      </div>
+      <p class="note">Tocá un tipo para cargarlo en el formulario. Los montos son el escenario recomendado con las páginas y funcionalidades típicas de cada tipo.</p>
+      <div class="bench-list" id="benchmark"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <span>© <span id="year"></span> Thiago Da Graca · Cotizador Web</span>
+      <span class="mono">Valores ficticios con fines educativos · No constituye una oferta comercial</span>
+    </div>
+  </footer>
+
+  <!-- Resumen fijo para pantallas chicas -->
+  <div class="mobile-bar" id="mobileBar">
+    <div>
+      <span class="mobile-bar__label">Recomendado</span>
+      <span class="mobile-bar__value" id="mobileValue">—</span>
+    </div>
+    <a class="btn btn--primary btn--sm" href="#resultados">
+      Ver detalle
+      <svg class="icon" aria-hidden="true"><use href="#i-arrow-down"/></svg>
+    </a>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
